@@ -1,7 +1,7 @@
 from array import *
 import pygame
 from pygame.locals import *
-import sys
+import sys, getopt
 
 
 red = (255, 0, 0)
@@ -165,7 +165,7 @@ def write_path(maze, came_from):
     output.close()
 
 def main():
-    maze = read_maze("input.txt")
+    maze = read_maze(sys.argv[1])
     draw_maze(maze)
     came_from = greedy_best_first_search(maze)
     # came_from = a_star_search(maze)
