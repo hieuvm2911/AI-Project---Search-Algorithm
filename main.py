@@ -110,6 +110,35 @@ def greedy_best_first_search(maze):
                 came_from[next] = current
     return came_from
 
+#find the path from start to goal using A* search
+def a_star_search(maze):
+    start, goal = find_start_goal(maze)
+    frontier = []
+    frontier.append(start)
+    came_from = {}
+    came_from[start] = None
+    cost_so_far = {}
+    cost_so_far[start] = 0
+    while len(frontier) > 0:
+        current = frontier[0]
+        for i in range(len(frontier)):
+            if cost_so_far[frontier[i]] + heuristic(frontier[i], goal) < cost_so_far[current] + heuristic(current, goal):
+                current = frontier[i]
+        if current == goal:
+            fill_cell(current[1]*20, current[0]*20, 20, 20, red)
+            break
+        frontier.remove(current)
+        for next in find_neighbors(maze, current):
+            new_cost = cost_so_far[current] + 1
+            if next not in cost_so_far or new_cost < cost_so_far[next]:
+                cost_so_far[next] = new_cost
+                frontier.append(next)
+                fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
+                pygame.display.update()
+                pygame.time.wait(100)
+                came_from[next] = current
+    return came_from
+
 #draw the path from start to goal
 def draw_path(maze, came_from):
     start, goal = find_start_goal(maze)
@@ -121,9 +150,10 @@ def draw_path(maze, came_from):
         pygame.time.wait(100)
 
 def main():
-    maze = read_maze("maze2.txt")
+    maze = read_maze("maze.txt")
     draw_maze(maze)
     came_from = greedy_best_first_search(maze)
+    # came_from = a_star_search(maze)
     draw_path(maze, came_from)
     pygame.display.update()
     while True:
