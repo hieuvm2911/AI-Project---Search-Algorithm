@@ -9,6 +9,7 @@ green = (0, 255, 0)
 blue = (0, 0, 255)
 black = (0, 0, 0)
 white = (255, 255, 255)
+light_yellow = (255, 255, 102)
 # Initialize pygame
 pygame.init()
 #create the screen
@@ -52,8 +53,6 @@ def draw_maze (maze):
                 fill_cell(j*20, i*20, 20, 20, green)
             elif maze[i][j] == " ":
                 fill_cell(j*20, i*20, 20, 20, white)
-            elif maze[i][j] == "G":
-                fill_cell(j*20, i*20, 20, 20, red)
 
 #heruistic function using euler distance
 def heuristic(current, goal):
@@ -99,11 +98,15 @@ def greedy_best_first_search(maze):
             if heuristic(frontier[i], goal) < heuristic(current, goal):
                 current = frontier[i]
         if current == goal:
+            fill_cell(current[1]*20, current[0]*20, 20, 20, red)
             break
         frontier.remove(current)
         for next in find_neighbors(maze, current):
             if next not in came_from:
                 frontier.append(next)
+                fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
+                pygame.display.update()
+                pygame.time.wait(100)
                 came_from[next] = current
     return came_from
 
@@ -118,7 +121,7 @@ def draw_path(maze, came_from):
         pygame.time.wait(100)
 
 def main():
-    maze = read_maze("maze.txt")
+    maze = read_maze("maze2.txt")
     draw_maze(maze)
     came_from = greedy_best_first_search(maze)
     draw_path(maze, came_from)
