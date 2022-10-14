@@ -149,12 +149,28 @@ def draw_path(maze, came_from):
         pygame.display.update()
         pygame.time.wait(100)
 
+#write path to output file
+def write_path(maze, came_from):
+    start, goal = find_start_goal(maze)
+    output_maze = maze
+    current = goal
+    while True:
+        current = came_from[current]
+        if current == start:
+            break
+        output_maze[current[0]] = output_maze[current[0]][:current[1]] + "*" + output_maze[current[0]][current[1]+1:]
+    output = open("output.txt", "w")
+    for i in range(len(output_maze)):
+        output.write(output_maze[i])
+    output.close()
+
 def main():
-    maze = read_maze("maze.txt")
+    maze = read_maze("input.txt")
     draw_maze(maze)
     came_from = greedy_best_first_search(maze)
     # came_from = a_star_search(maze)
     draw_path(maze, came_from)
+    write_path(maze, came_from)
     pygame.display.update()
     while True:
         for event in pygame.event.get():
