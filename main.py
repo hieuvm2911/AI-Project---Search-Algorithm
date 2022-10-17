@@ -51,7 +51,7 @@ def draw_maze (maze):
                 fill_cell(j*20, i*20, 20, 20, blue)
             elif maze[i][j] == "S":
                 fill_cell(j*20, i*20, 20, 20, green)
-            elif maze[i][j] == " ":
+            elif maze[i][j] == " " or maze[i][j] == "G":
                 fill_cell(j*20, i*20, 20, 20, white)
 
 #heruistic function using euler distance
@@ -85,6 +85,27 @@ def find_neighbors(maze, current):
             neighbors.append((current[0], current[1] + 1))
     return neighbors
 
+#find the path from start to goal using dfs
+def dfs(maze):
+    start, goal = find_start_goal(maze)
+    frontier = []
+    frontier.append(start)
+    came_from = {}
+    came_from[start] = None
+    while len(frontier) > 0:
+        current = frontier.pop()
+        if current == goal:
+            fill_cell(current[1]*20, current[0]*20, 20, 20, red)
+            break
+        for next in find_neighbors(maze, current):
+            if next not in came_from:
+                frontier.append(next)
+                fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
+                pygame.display.update()
+                pygame.time.wait()
+                came_from[next] = current
+    return came_from
+
 #find the path from start to goal using greedy best first search
 def greedy_best_first_search(maze):
     start, goal = find_start_goal(maze)
@@ -106,7 +127,7 @@ def greedy_best_first_search(maze):
                 frontier.append(next)
                 fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
                 pygame.display.update()
-                pygame.time.wait(100)
+                pygame.time.wait(60)
                 came_from[next] = current
     return came_from
 
@@ -117,25 +138,25 @@ def a_star_search(maze):
     frontier.append(start)
     came_from = {}
     came_from[start] = None
-    cost_so_far = {}
-    cost_so_far[start] = 0
+    cost = {}
+    cost[start] = 0
     while len(frontier) > 0:
         current = frontier[0]
         for i in range(len(frontier)):
-            if cost_so_far[frontier[i]] + heuristic(frontier[i], goal) < cost_so_far[current] + heuristic(current, goal):
+            if cost[frontier[i]] + heuristic(frontier[i], goal) < cost[current] + heuristic(current, goal):
                 current = frontier[i]
         if current == goal:
             fill_cell(current[1]*20, current[0]*20, 20, 20, red)
             break
         frontier.remove(current)
         for next in find_neighbors(maze, current):
-            new_cost = cost_so_far[current] + 1
-            if next not in cost_so_far or new_cost < cost_so_far[next]:
-                cost_so_far[next] = new_cost
+            new_cost = cost[current] + 1
+            if next not in cost or new_cost < cost[next]:
+                cost[next] = new_cost
                 frontier.append(next)
                 fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
                 pygame.display.update()
-                pygame.time.wait(100)
+                pygame.time.wait(60)
                 came_from[next] = current
     return came_from
 
@@ -150,7 +171,7 @@ def draw_path(maze, came_from):
         pygame.time.wait(100)
 
 #write path to output file
-def write_path(maze, came_from):
+def write_path(maze, came_from, num_file):
     start, goal = find_start_goal(maze)
     output_maze = maze
     current = goal
@@ -159,18 +180,26 @@ def write_path(maze, came_from):
         if current == start:
             break
         output_maze[current[0]] = output_maze[current[0]][:current[1]] + "*" + output_maze[current[0]][current[1]+1:]
-    output = open("output.txt", "w")
+    output = open("output" + num_file + ".txt", "w")
     for i in range(len(output_maze)):
         output.write(output_maze[i])
     output.close()
 
 def main():
-    maze = read_maze(sys.argv[1])
+    if sys.argv[1] == "1":
+        maze = read_maze("input1.txt")
+    elif sys.argv[1] == "2":
+        maze = read_maze("input2.txt")
+    
     draw_maze(maze)
-    came_from = greedy_best_first_search(maze)
-    # came_from = a_star_search(maze)
+    if sys.argv[2] == "gbfs":
+        came_from = greedy_best_first_search(maze)
+    elif sys.argv[2] == "astar":
+        came_from = a_star_search(maze)
+    elif sys.argv[2] == "dfs":
+        came_from = dfs(maze)
     draw_path(maze, came_from)
-    write_path(maze, came_from)
+    write_path(maze, came_from, sys.argv[1])
     pygame.display.update()
     while True:
         for event in pygame.event.get():
