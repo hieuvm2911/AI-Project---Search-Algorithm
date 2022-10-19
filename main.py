@@ -165,7 +165,7 @@ def gbfs(maze, heur_type):
     return came_from
     
 #find the path from start to goal using A* search
-def a_star_search(maze, heur_type):
+def astar(maze, heur_type):
     start, goal = find_start_goal(maze)
     frontier = []
     frontier.append(start)
@@ -246,11 +246,11 @@ def main():
         draw_maze(maze)
         came_from = gbfs(maze, 2)
     elif sys.argv[3] == "astar":
-        came_from = a_star_search(maze, 1)
+        came_from = astar(maze, 1)
         draw_path(maze, came_from)
         export_output(maze, came_from, file_path + "_h1")
         draw_maze(maze)
-        came_from = a_star_search(maze, 2)
+        came_from = astar(maze, 2)
     elif sys.argv[3] == "dfs":
         came_from = dfs(maze)
 
@@ -261,11 +261,9 @@ def main():
         export_output(maze, came_from, file_path)
 
     pygame.display.update()
-    while True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
+    pygame.time.wait(1000)
+    pygame.quit()
+    sys.exit()
 
 if __name__ == "__main__":
     main()
