@@ -1,9 +1,10 @@
 from array import *
+import heapq
+from multiprocessing import heap
 import pygame
 from pygame.locals import *
 import os
 import sys
-
 
 red = (255, 0, 0)
 green = (0, 255, 0)
@@ -12,8 +13,10 @@ gray = (128, 128, 128)
 black = (0, 0, 0)
 white = (255, 255, 255)
 light_yellow = (255, 255, 102)
+
 # Initialize pygame
 pygame.init()
+
 #create the screen
 screen = pygame.display.set_mode((20*35, 20*20))
 
@@ -21,10 +24,6 @@ screen = pygame.display.set_mode((20*35, 20*20))
 def fill_cell (x1, y1, x2, y2, color):
     pygame.draw.rect(screen, color, (x1, y1, x2, y2))
     pygame.draw.rect(screen, black, (x1, y1, x2, y2), 1)
-
-
-#fill screen background with white
-screen.fill(white)
 
 
 def read_maze(file_path):
@@ -39,7 +38,7 @@ def read_maze(file_path):
         for line in f:
             maze.append(line)
 
-    # check the goal in maze (first and last line + first and last column)
+    # check the goal in maze (first and last line + first and last column) and mark it
     for i in range(len(maze[0])):
         if maze[0][i] == " ":
             maze[0] = maze[0][:i] + "G" + maze[0][i+1:]
@@ -49,8 +48,8 @@ def read_maze(file_path):
     for i in range(1, len(maze) - 2):
         if maze[i][0] == " ":
             maze[i] = maze[i][:0] + "G" + maze[i][1:]
-        elif maze[i][len(maze[i]) - 1] == " ":
-            maze[i] = maze[i][:len(maze[i]) - 1] + "G" + maze[i][len(maze[i]):]
+        if maze[i][-2] == " ": # -2 because of the newline character
+            maze[i] = maze[i][:-2] + "G" + maze[i][-1:]
 
     return maze, bonus
 
@@ -68,7 +67,6 @@ def draw_maze (maze):
             else:
                 fill_cell(j*20, i*20, 20, 20, gray)
 
-
 #heruistic function using euler distance
 def euler_heuristic(current, goal):
     return (float) ((current[0] - goal[0])**2 + (current[1] - goal[1])**2)**0.5
@@ -78,14 +76,15 @@ def euler_heuristic(current, goal):
 def manhattan_heuristic(current, goal):
     return abs(current[0] - goal[0]) + abs(current[1] - goal[1])
 
-
+# helper function heuristics
 def heuristic(type, current, goal):
     if type == 1:
         return euler_heuristic(current, goal)
     else:
         return manhattan_heuristic(current, goal)
 
-#find the start and goal position
+
+#find the start and goal position in maze
 def find_start_goal(maze):
     for i in range(len(maze)):
         for j in range(len(maze[i])):
@@ -114,6 +113,29 @@ def find_neighbors(maze, current):
     return neighbors
 
 
+#find the path from start to goal using bfs
+def bfs(maze):
+    start, goal = find_start_goal(maze)
+    frontier = [start]
+    came_from = {}
+    came_from[start] = None
+    while True:
+        if len(frontier) == 0:
+            return None
+        current = frontier.pop(0)
+        if current == goal:
+            fill_cell(current[1]*20, current[0]*20, 20, 20, red)
+            break
+        for next in find_neighbors(maze, current):
+            if next not in came_from:
+                frontier.append(next)
+                fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
+                pygame.display.update()
+                pygame.time.wait(10)
+                came_from[next] = current
+    return came_from
+
+
 #find the path from start to goal using dfs
 def dfs(maze):
     start, goal = find_start_goal(maze)
@@ -121,7 +143,9 @@ def dfs(maze):
     frontier.append(start)
     came_from = {}
     came_from[start] = None
-    while len(frontier) > 0:
+    while True:
+        if len(frontier) == 0:
+            return None
         current = frontier.pop()
         if current == goal:
             fill_cell(current[1]*20, current[0]*20, 20, 20, red)
@@ -131,9 +155,38 @@ def dfs(maze):
                 frontier.append(next)
                 fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
                 pygame.display.update()
-                pygame.time.wait(20)
+                pygame.time.wait(10)
                 came_from[next] = current
     return came_from
+
+
+# find the path from start to goal using ucs
+def ucs(maze):
+    start, goal = find_start_goal(maze)
+    frontier = []
+    heapq.heappush(frontier, (0, start))
+    came_from = {}
+    came_from[start] = None
+    cost = {}
+    cost[start] = 0
+    while True:
+        if len(frontier) == 0:
+            return None
+        current = heapq.heappop(frontier)[1]
+        if current == goal:
+            fill_cell(current[1]*20, current[0]*20, 20, 20, red)
+            break
+        for next in find_neighbors(maze, current):
+            new_cost = cost[current] + 1
+            if next not in cost or new_cost < cost[next]:
+                cost[next] = new_cost
+                heapq.heappush(frontier, (new_cost, next))
+                fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
+                pygame.display.update()
+                pygame.time.wait(10)
+                came_from[next] = current
+    return came_from
+    
 
 
 #find the path from start to goal using greedy best first search
@@ -160,10 +213,11 @@ def gbfs(maze, heur_type):
                 frontier.append(next)
                 fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
                 pygame.display.update()
-                pygame.time.wait(20)
+                pygame.time.wait(10)
                 came_from[next] = current
     return came_from
     
+
 #find the path from start to goal using A* search
 def astar(maze, heur_type):
     start, goal = find_start_goal(maze)
@@ -192,7 +246,7 @@ def astar(maze, heur_type):
                 frontier.append(next)
                 fill_cell(next[1]*20, next[0]*20, 20, 20, light_yellow)
                 pygame.display.update()
-                pygame.time.wait(20)
+                pygame.time.wait(10)
                 came_from[next] = current
     return came_from
 
@@ -207,7 +261,7 @@ def draw_path(maze, came_from):
         current = came_from[current]
         fill_cell(current[1]*20, current[0]*20, 20, 20, green)
         pygame.display.update()
-        pygame.time.wait(20)
+        pygame.time.wait(10)
 
 
 #write path to output file
@@ -251,8 +305,15 @@ def main():
         export_output(maze, came_from, file_path + "_h1")
         draw_maze(maze)
         came_from = astar(maze, 2)
+    elif sys.argv[3] == "bfs":
+        came_from = bfs(maze)
     elif sys.argv[3] == "dfs":
         came_from = dfs(maze)
+    elif sys.argv[3] == "ucs":
+        came_from = ucs(maze)
+    else:
+        print("Invalid algorithm")
+        return
 
     draw_path(maze, came_from)
     if sys.argv[3] == "gbfs" or sys.argv[3] == "astar":
@@ -261,7 +322,7 @@ def main():
         export_output(maze, came_from, file_path)
 
     pygame.display.update()
-    pygame.time.wait(1000)
+    pygame.time.wait(700)
     pygame.quit()
     sys.exit()
 
