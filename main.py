@@ -1,6 +1,5 @@
 from array import *
 import heapq
-from multiprocessing import heap
 import pygame
 from pygame.locals import *
 import os
@@ -286,6 +285,7 @@ def export_output(maze, came_from, file_path):
 def main():
     # read input file and draw maze
     maze, bonus = read_maze("./input/" + sys.argv[1] + "/input" + sys.argv[2] + ".txt")
+    screen = pygame.display.set_mode((20*(len(maze[0]) - 1), 20*len(maze))) # update screen size
     draw_maze(maze)
     
     # create output folder
